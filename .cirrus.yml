@@ -11,6 +11,8 @@ env_task:
 
 gdc_task:
         clone_script: git clone https://github.com/W-joe/gcc --branch=master-ci --depth=1
+        pwd_script: pwd
+        ls_script: ls -l
         setup_script: ./buildci.sh setup
         build_script: ./buildci.sh build
         test_script: ./buildci.sh testsuite
