@@ -7,9 +7,7 @@ container:
 env_task:
         env_script: env
         pwd_script: pwd
-        ls_script:
-                - ls -l
-                - ls -R
+        ls_script: ls -l
 
 gdc_task:
         clone_script: git clone https://github.com/W-joe/gcc --branch=master-ci --depth=1
