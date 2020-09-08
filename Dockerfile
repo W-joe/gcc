@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM debian:latest
 RUN apt-get update \
     && apt-get install -y git autogen autoconf automake bison dejagnu \
     flex libcurl4-gnutls-dev libgmp-dev libisl-dev libmpc-dev \
