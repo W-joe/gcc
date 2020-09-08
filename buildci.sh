@@ -76,6 +76,17 @@ environment() {
         build_target_canonical=${build_host_canonical}
         make_flags="-j$(nproc)"
         build_bootstrap="disable"
+    elif [ "${CIRRUS_CI}" = "true" ]; then
+        project_dir=${PWD}
+        log_dir=${PWD}/logs
+        mkdir -p ${log_dir}
+        cache_dir="${PWD}/gcc-deps"
+        build_host=$($CC -dumpmachine)
+        build_host_canonical=$(/usr/share/misc/config.sub ${build_host})
+        build_target=${build_host}
+        build_target_canonical=${build_host_canonical}
+        make_flags="-j$(nproc) -sw LIBTOOLFLAGS=--silent"
+        build_bootstrap="disable"
     else
         echo "Unhandled CI environment"
         exit 1
