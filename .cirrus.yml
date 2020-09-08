@@ -1,6 +1,7 @@
+environment:
+        CIRRUS_CLONE_DEPTH=1
+
 container:
-        environment:
-                CIRRUS_CLONE_DEPTH=1
         dockerfile: Dockerfile
 
 env_task:
