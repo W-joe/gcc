@@ -8,7 +8,7 @@ container:
         # CPUs: 8
         # RAM: 24 GB
         cpu: 4
-        memory: 8G
+        memory: 10G
 
 gdc_task:
         # 2 hours is a hard limit for community cluster.
