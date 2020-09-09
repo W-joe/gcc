@@ -11,6 +11,8 @@ container:
         memory: 8G
 
 gdc_task:
+        # 2 hours is a hard limit for community cluster.
+        timeout_in: 120m
         clone_script: git clone --branch=master-ci --depth=1 https://github.com/W-joe/gcc /tmp/cirrus-ci-build
         env_script:
                 - pwd
@@ -22,6 +24,8 @@ gdc_task:
 
 
 unittest_task:
+        # 2 hours is a hard limit for community cluster.
+        timeout_in: 120m
         clone_script: git clone --branch=master-ci --depth=1 https://github.com/W-joe/gcc /tmp/cirrus-ci-build
         env_script:
                 - pwd
