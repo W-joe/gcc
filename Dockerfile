@@ -6,6 +6,8 @@ RUN apt-get install -y software-properties-common gnupg sudo curl
 # current Ubuntu version, groovy at the time of this commit, which doesn't
 # provide a Release file.
 RUN add-apt-repository -y 'deb http://ppa.launchpad.net/ubuntu-toolchain-r/test/ubuntu bionic main'
+# Import key for ubuntu-toolchain-r/test/ubuntu for bionic
+RUN apt-key adv --keyserver keyserver.ubuntu.com --recv 60C317803A41BA51845E371A1E9377A2BA9EF27F
 RUN apt-get update
 # Install dependencies for building GDC
 RUN apt-get install -y git autogen autoconf automake bison dejagnu \
