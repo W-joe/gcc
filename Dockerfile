@@ -13,7 +13,7 @@ RUN apt-get update
 RUN apt-get install -y git autogen autoconf automake bison dejagnu \
     flex libcurl4-gnutls-dev libgmp-dev libisl-dev libmpc-dev \
     libmpfr-dev make patch tzdata xz-utils binutils libc6-dev \
-    gcc-9 g++9
+    gcc-9 g++-9
 RUN rm -rf /var/lib/apt/lists/*
 RUN env
 
