@@ -3,6 +3,12 @@ environment:
 
 container:
         dockerfile: Dockerfile
+        # 2 CPU/4GB RAM by default
+        # community cluster limits:
+        # CPUs: 8
+        # RAM: 24 GB
+        cpu: 4
+        memory: 8G
 
 env_task:
         env_script: env
