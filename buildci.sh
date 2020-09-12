@@ -207,12 +207,12 @@ installdeps() {
     ## Install build dependencies.
     # Would save 1 minute if these were preinstalled in some docker image.
     # But the network speed is nothing to complain about so far...
-    if [ "${CIRRUS_CI}" != "true" ]; then                               
+    if [ "${CIRRUS_CI}" != "true" ]; then
         # Cirrus CI uses a docker container with pre-installed dependec
-        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test          
-        sudo apt-get update -qq                                         
-        sudo apt-get install -qq gcc-${host_package} g++-${host_package}
-        autogen autoconf automake bison dejagnu flex rsync patch pxz
+        sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+        sudo apt-get update -qq
+        sudo apt-get install -qq gcc-${host_package} g++-${host_package} \
+            autogen autoconf automake bison dejagnu flex rsync patch pxz
     fi
 }
 
