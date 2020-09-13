@@ -1,5 +1,6 @@
 FROM debian:latest
 RUN env
+RUN cat /etc/os-release
 RUN apt-get update
 # Install dependencies for add-apt-repository and the buildci script
 RUN apt-get install -y software-properties-common gnupg sudo curl
