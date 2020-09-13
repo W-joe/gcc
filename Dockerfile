@@ -1,4 +1,5 @@
 FROM debian:latest
+RUN env
 RUN apt-get update
 # Install dependencies for add-apt-repository and the buildci script
 RUN apt-get install -y software-properties-common gnupg sudo curl
@@ -15,5 +16,4 @@ RUN apt-get install -y git autogen autoconf automake bison dejagnu \
     libmpfr-dev make patch tzdata xz-utils binutils libc6-dev \
     gcc-9 g++-9
 RUN rm -rf /var/lib/apt/lists/*
-RUN env
 
