@@ -24,8 +24,16 @@ export CXX="g++-${host_package}"
 export GDC="gdc-${host_package}"
 
 environment() {
+    ## Determine which compressor to use
+    #
     # default to pxz
     compressor="pxz"
+    #
+    # xz supports parallel compression since version 5.2.0
+    xz_version=$(xz --version | grep --only-matching --max-count=1 --regexp="[0-9]\+\.[0-9]\+\.[0-9]\+")
+    if [ $(inflate_version $xz_version) -ge $(inflate_version "5.2.0") ]; then
+        compressor="xz --threads=$(nproc) "
+    fi
 
     ## Determine what flags to use for configure, build and testing the compiler.
     ## Commonize CI environment variables.
