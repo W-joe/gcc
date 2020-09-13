@@ -23,6 +23,20 @@ export CC="gcc-${host_package}"
 export CXX="g++-${host_package}"
 export GDC="gdc-${host_package}"
 
+# Inflate a version string
+# e.g. inflate_version 1.2.3 returns 1002003
+#
+# Note:
+# This function assumes that each sub-version is < 1000.
+#
+# Usage:
+# if [ $(inflate_version "$version") -ge $(inflate_version "2.2.0") ]; then
+#    echo $version is greater or equal 2.2.0
+# fi
+inflate_version() {
+    echo "$@" | awk -F. '{ printf("%d%03d%03d\n", $1, $2, $3); }'
+}
+
 environment() {
     ## Determine which compressor to use
     #
