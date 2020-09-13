@@ -24,6 +24,9 @@ export CXX="g++-${host_package}"
 export GDC="gdc-${host_package}"
 
 environment() {
+    # default to pxz
+    compressor="pxz"
+
     ## Determine what flags to use for configure, build and testing the compiler.
     ## Commonize CI environment variables.
     #
@@ -212,7 +215,10 @@ installdeps() {
         sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
         sudo apt-get update -qq
         sudo apt-get install -qq gcc-${host_package} g++-${host_package} \
-            autogen autoconf automake bison dejagnu flex rsync patch pxz
+            autogen autoconf automake bison dejagnu flex rsync patch
+        if [ "$compressor" = "pxz" ]; then
+            sudo apt-get install -qq pxz
+        fi
     fi
 }
 
@@ -382,7 +388,7 @@ save_logs() {
         -exec cp --parents \{\} ${log_dir} \;
 
     # Compress logs
-    find ${log_dir} \( -name \*.sum -o -name \*.log \) -exec pxz \{\} \;
+    find ${log_dir} \( -name \*.sum -o -name \*.log \) -exec ${compressor} \{\} \;
 }
 
 ## Run a single build task or all at once.
