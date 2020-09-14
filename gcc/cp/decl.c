@@ -2312,6 +2312,8 @@ duplicate_decls (tree newdecl, tree olddecl, bool newdecl_is_friend)
 	    |= DECL_INITIALIZED_BY_CONSTANT_EXPRESSION_P (olddecl);
 	  DECL_DECLARED_CONSTEXPR_P (newdecl)
 	    |= DECL_DECLARED_CONSTEXPR_P (olddecl);
+	  DECL_DECLARED_CONSTINIT_P (newdecl)
+	    |= DECL_DECLARED_CONSTINIT_P (olddecl);
 
 	  /* Merge the threadprivate attribute from OLDDECL into NEWDECL.  */
 	  if (DECL_LANG_SPECIFIC (olddecl)
@@ -5199,8 +5201,8 @@ groktypename (cp_decl_specifier_seq *type_specifiers,
   return type;
 }
 
-/* Process a DECLARATOR for a function-scope variable declaration,
-   namespace-scope variable declaration, or function declaration.
+/* Process a DECLARATOR for a function-scope or namespace-scope
+   variable or function declaration.
    (Function definitions go through start_function; class member
    declarations appearing in the body of the class go through
    grokfield.)  The DECL corresponding to the DECLARATOR is returned.
@@ -5410,6 +5412,11 @@ start_decl (const cp_declarator *declarator,
 
   was_public = TREE_PUBLIC (decl);
 
+  if ((DECL_EXTERNAL (decl) || TREE_CODE (decl) == FUNCTION_DECL)
+      && current_function_decl)
+    /* A function-scope decl of some namespace-scope decl.  */
+    DECL_LOCAL_DECL_P (decl) = true;
+
   /* Enter this declaration into the symbol table.  Don't push the plain
      VAR_DECL for a variable template.  */
   if (!template_parm_scope_p ()
@@ -5417,14 +5424,8 @@ start_decl (const cp_declarator *declarator,
     decl = maybe_push_decl (decl);
 
   if (processing_template_decl)
-    {
-      /* Make sure that for a `constinit' decl push_template_decl creates
-	 a DECL_TEMPLATE_INFO info for us, so that cp_finish_decl can then set
-	 TINFO_VAR_DECLARED_CONSTINIT.  */
-      if (decl_spec_seq_has_spec_p (declspecs, ds_constinit))
-	retrofit_lang_decl (decl);
-      decl = push_template_decl (decl);
-    }
+    decl = push_template_decl (decl);
+
   if (decl == error_mark_node)
     return error_mark_node;
 
@@ -6466,7 +6467,7 @@ reshape_init_r (tree type, reshape_iter *d, tree first_initializer_p,
      non-empty subaggregate, brace elision is assumed and the
      initializer is considered for the initialization of the first
      member of the subaggregate.  */
-  if (TREE_CODE (init) != CONSTRUCTOR
+  if ((TREE_CODE (init) != CONSTRUCTOR || COMPOUND_LITERAL_P (init))
       /* But don't try this for the first initializer, since that would be
 	 looking through the outermost braces; A a2 = { a1 }; is not a
 	 valid aggregate initialization.  */
@@ -6599,7 +6600,17 @@ reshape_init (tree type, tree init, tsubst_flags_t complain)
   /* Brace elision is not performed for a CONSTRUCTOR representing
      parenthesized aggregate initialization.  */
   if (CONSTRUCTOR_IS_PAREN_INIT (init))
-    return init;
+    {
+      tree elt = (*v)[0].value;
+      /* If we're initializing a char array from a string-literal that is
+	 enclosed in braces, unwrap it here.  */
+      if (TREE_CODE (type) == ARRAY_TYPE
+	  && vec_safe_length (v) == 1
+	  && char_type_p (TYPE_MAIN_VARIANT (TREE_TYPE (type)))
+	  && TREE_CODE (tree_strip_any_location_wrapper (elt)) == STRING_CST)
+	return elt;
+      return init;
+    }
 
   /* Handle [dcl.init.list] direct-list-initialization from
      single element of enumeration with a fixed underlying type.  */
@@ -6875,7 +6886,7 @@ check_initializer (tree decl, tree init, int flags, vec<tree, va_gc> **cleanups)
 	      flags |= LOOKUP_ALREADY_DIGESTED;
 	    }
 	  else if (DECL_DECLARED_CONSTEXPR_P (decl)
-		   || (flags & LOOKUP_CONSTINIT))
+		   || DECL_DECLARED_CONSTINIT_P (decl))
 	    {
 	      /* Declared constexpr or constinit, but no suitable initializer;
 		 massage init appropriately so we can pass it into
@@ -7350,7 +7361,7 @@ omp_declare_variant_finalize_one (tree decl, tree attr)
 	  fn = STRIP_TEMPLATE (fn);
 	  if (!((TREE_CODE (fn) == USING_DECL && DECL_DEPENDENT_P (fn))
 		 || DECL_FUNCTION_MEMBER_P (fn)
-		 || DECL_LOCAL_FUNCTION_P (fn)))
+		 || DECL_LOCAL_DECL_P (fn)))
 	    {
 	      koenig_p = true;
 	      if (!any_type_dependent_arguments_p (args))
@@ -7666,10 +7677,6 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
 	  DECL_INITIAL (decl) = NULL_TREE;
 	}
 
-      /* Handle `constinit' on variable templates.  */
-      if (flags & LOOKUP_CONSTINIT)
-	TINFO_VAR_DECLARED_CONSTINIT (DECL_TEMPLATE_INFO (decl)) = true;
-
       /* Generally, initializers in templates are expanded when the
 	 template is instantiated.  But, if DECL is a variable constant
 	 then it can be used in future constant expressions, so its value
@@ -7773,7 +7780,7 @@ cp_finish_decl (tree decl, tree init, bool init_const_expr_p,
       /* [dcl.constinit]/1 "The constinit specifier shall be applied
 	 only to a declaration of a variable with static or thread storage
 	 duration."  */
-      if ((flags & LOOKUP_CONSTINIT)
+      if (DECL_DECLARED_CONSTINIT_P (decl)
 	  && !(dk == dk_thread || dk == dk_static))
 	{
 	  error_at (DECL_SOURCE_LOCATION (decl),
@@ -9450,7 +9457,10 @@ grokfndecl (tree ctype,
     {
       tree tmpl_reqs = NULL_TREE;
       tree ctx = friendp ? current_class_type : ctype;
-      bool memtmpl = (processing_template_decl > template_class_depth (ctx));
+      bool block_local = TREE_CODE (current_scope ()) == FUNCTION_DECL;
+      bool memtmpl = (!block_local
+		      && (processing_template_decl
+			  > template_class_depth (ctx)));
       if (memtmpl)
         tmpl_reqs = TEMPLATE_PARMS_CONSTRAINTS (current_template_parms);
       tree ci = build_constraints (tmpl_reqs, decl_reqs);
@@ -9460,9 +9470,11 @@ grokfndecl (tree ctype,
           ci = NULL_TREE;
         }
       /* C++20 CA378: Remove non-templated constrained functions.  */
-      if (ci && !flag_concepts_ts
-	  && (!processing_template_decl
-	      || (friendp && !memtmpl && !funcdef_flag)))
+      if (ci
+	  && (block_local
+	      || (!flag_concepts_ts
+		  && (!processing_template_decl
+		      || (friendp && !memtmpl && !funcdef_flag)))))
 	{
 	  error_at (location, "constraints on a non-templated function");
 	  ci = NULL_TREE;
@@ -13820,9 +13832,15 @@ grokdeclarator (const cp_declarator *declarator,
     else if (storage_class == sc_static)
       DECL_THIS_STATIC (decl) = 1;
 
-    /* Set constexpr flag on vars (functions got it in grokfndecl).  */
-    if (constexpr_p && VAR_P (decl))
-      DECL_DECLARED_CONSTEXPR_P (decl) = true;
+    if (VAR_P (decl))
+      {
+	/* Set constexpr flag on vars (functions got it in grokfndecl).  */
+	if (constexpr_p)
+	  DECL_DECLARED_CONSTEXPR_P (decl) = true;
+	/* And the constinit flag (which only applies to variables).  */
+	else if (constinit_p)
+	  DECL_DECLARED_CONSTINIT_P (decl) = true;
+      }
 
     /* Record constancy and volatility on the DECL itself .  There's
        no need to do this when processing a template; we'll do this
@@ -13867,11 +13885,9 @@ int
 local_variable_p (const_tree t)
 {
   if ((VAR_P (t)
-       /* A VAR_DECL with a context that is a _TYPE is a static data
-	  member.  */
-       && !TYPE_P (CP_DECL_CONTEXT (t))
-       /* Any other non-local variable must be at namespace scope.  */
-       && !DECL_NAMESPACE_SCOPE_P (t))
+       && (DECL_LOCAL_DECL_P (t)
+	   || !DECL_CONTEXT (t)
+	   || TREE_CODE (DECL_CONTEXT (t)) == FUNCTION_DECL))
       || (TREE_CODE (t) == PARM_DECL))
     return 1;
 

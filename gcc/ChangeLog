@@ -1,3 +1,275 @@
+2020-09-13  Roger Sayle  <roger@nextmovesoftware.com>
+
+	* config/pa/pa.c (hppa_rtx_costs) [ASHIFT, ASHIFTRT, LSHIFTRT]:
+	Provide accurate costs for DImode shifts of integer constants.
+
+2020-09-12  Roger Sayle  <roger@nextmovesoftware.com>
+	    John David Anglin  <danglin@gcc.gnu.org>
+
+	* config/pa/pa.md (shrpsi4_1, shrpsi4_2): New define_insns split
+	out from previous shrpsi4 providing two commutitive variants using
+	plus_xor_ior_operator as a predicate.
+	(shrpdi4_1, shrpdi4_2, shrpdi_3, shrpdi_4): Likewise DImode versions
+	where _1 and _2 take register shifts, and _3 and _4 for integers.
+	(rotlsi3_internal): Name this anonymous instruction.
+	(rotrdi3): New DImode insn copied from rotrsi3.
+	(rotldi3): New DImode expander copied from rotlsi3.
+	(rotldi4_internal): New DImode insn copied from rotsi3_internal.
+
+2020-09-11  Michael Meissner  <meissner@linux.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_maybe_emit_maxc_minc): Rename
+	from rs6000_emit_p9_fp_minmax.  Change return type to bool.  Add
+	comments to document NaN/signed zero behavior.
+	(rs6000_maybe_emit_fp_cmove): Rename from rs6000_emit_p9_fp_cmove.
+	(have_compare_and_set_mask): New helper function.
+	(rs6000_emit_cmove): Update calls to new names and the new helper
+	function.
+
+2020-09-11  Nathan Sidwell  <nathan@acm.org>
+
+	* config/i386/sse.md (mov<mode>): Fix operand indices.
+
+2020-09-11  Martin Sebor  <msebor@redhat.com>
+
+	PR middle-end/96903
+	* builtins.c (compute_objsize): Remove incorrect offset adjustment.
+	(compute_objsize): Adjust offset range here instead.
+
+2020-09-11  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/97020
+	* tree-vect-slp.c (vect_slp_analyze_operations): Apply
+	SLP costs when doing loop vectorization.
+
+2020-09-11  Tom de Vries  <tdevries@suse.de>
+
+	PR target/96964
+	* config/nvptx/nvptx.md (define_expand "atomic_test_and_set"): New
+	expansion.
+
+2020-09-11  Andrew Stubbs  <ams@codesourcery.com>
+
+	* config/gcn/gcn.c (gcn_hard_regno_mode_ok): Align TImode registers.
+	* config/gcn/gcn.md: Assert that TImode registers do not early clobber.
+
+2020-09-11  Richard Biener  <rguenther@suse.de>
+
+	* tree-vectorizer.h (_slp_instance::location): New method.
+	(vect_schedule_slp): Adjust prototype.
+	* tree-vectorizer.c (vec_info::remove_stmt): Adjust
+	the BB region begin if we removed the stmt it points to.
+	* tree-vect-loop.c (vect_transform_loop): Adjust.
+	* tree-vect-slp.c (_slp_instance::location): Implement.
+	(vect_analyze_slp_instance): For BB vectorization set
+	vect_location to that of the instance.
+	(vect_slp_analyze_operations): Likewise.
+	(vect_bb_vectorization_profitable_p): Remove wrapper.
+	(vect_slp_analyze_bb_1): Remove cost check here.
+	(vect_slp_region): Cost check and code generate subgraphs separately,
+	report optimized locations and missed optimizations due to
+	profitability for each of them.
+	(vect_schedule_slp): Get the vector of SLP graph entries to
+	vectorize as argument.
+
+2020-09-11  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/97013
+	* tree-vect-slp.c (vect_slp_analyze_bb_1): Remove duplicate dumping.
+
+2020-09-11  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-slp.c (vect_build_slp_tree_1): Check vector
+	types for all lanes are compatible.
+	(vect_analyze_slp_instance): Appropriately check for stores.
+	(vect_schedule_slp): Likewise.
+
+2020-09-11  Tom de Vries  <tdevries@suse.de>
+
+	* config/nvptx/nvptx.c (nvptx_assemble_value): Fix undefined
+	behaviour.
+
+2020-09-11  Tom de Vries  <tdevries@suse.de>
+
+	* config/nvptx/nvptx.c (nvptx_assemble_value): Handle negative
+	__int128.
+
+2020-09-11  Aaron Sawdey  <acsawdey@linux.ibm.com>
+
+	* config/rs6000/rs6000.c (rs6000_option_override_internal):
+	Change default.
+
+2020-09-10  Michael Meissner  <meissner@linux.ibm.com>
+
+	* config/rs6000/rs6000-protos.h (rs6000_emit_cmove): Change return
+	type to bool.
+	(rs6000_emit_int_cmove): Change return type to bool.
+	* config/rs6000/rs6000.c (rs6000_emit_cmove): Change return type
+	to bool.
+	(rs6000_emit_int_cmove): Change return type to bool.
+
+2020-09-10  Tom de Vries  <tdevries@suse.de>
+
+	PR target/97004
+	* config/nvptx/nvptx.c (nvptx_assemble_value): Handle shift by
+	number of bits in shift operand.
+
+2020-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	* lto-streamer-out.c (collect_block_tree_leafs): Recurse on
+	root rather than BLOCK_SUBBLOCKS (root).
+
+2020-09-10  Alex Coplan  <alex.coplan@arm.com>
+
+	* config/aarch64/aarch64-cores.def: Add Cortex-R82.
+	* config/aarch64/aarch64-tune.md: Regenerate.
+	* doc/invoke.texi: Add entry for Cortex-R82.
+
+2020-09-10  Alex Coplan  <alex.coplan@arm.com>
+
+	* common/config/aarch64/aarch64-common.c
+	(aarch64_get_extension_string_for_isa_flags): Don't force +crc for
+	Armv8-R.
+	* config/aarch64/aarch64-arches.def: Add entry for Armv8-R.
+	* config/aarch64/aarch64-c.c (aarch64_define_unconditional_macros): Set
+	__ARM_ARCH_PROFILE correctly for Armv8-R.
+	* config/aarch64/aarch64.h (AARCH64_FL_V8_R): New.
+	(AARCH64_FL_FOR_ARCH8_R): New.
+	(AARCH64_ISA_V8_R): New.
+	* doc/invoke.texi: Add Armv8-R to architecture table.
+
+2020-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	* config/arm/arm.c (arm_override_options_after_change_1): Add opts_set
+	argument, test opts_set->x_str_align_functions rather than
+	opts->x_str_align_functions.
+	(arm_override_options_after_change, arm_option_override_internal,
+	arm_set_current_function): Adjust callers.
+
+2020-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR target/96939
+	* config/arm/arm.c (arm_override_options_after_change): Don't call
+	arm_configure_build_target here.
+	(arm_set_current_function): Call arm_override_options_after_change_1
+	at the end.
+
+2020-09-10  Pat Haugen  <pthaugen@linux.ibm.com>
+
+	* config/rs6000/rs6000.md
+	(lfiwzx, floatunssi<mode>2_lfiwzx, p8_mtvsrwz, p8_mtvsrd_sf): Fix insn
+	type.
+	* config/rs6000/vsx.md
+	(vsx_concat_<mode>, vsx_splat_<mode>_reg, vsx_splat_v4sf): Likewise.
+
+2020-09-10  Jonathan Yong  <10walls@gmail.com>
+
+	* config.host: Adjust plugin name for Windows.
+
+2020-09-10  Tom de Vries  <tdevries@suse.de>
+
+	PR tree-optimization/97000
+	* tree-cfgcleanup.c (cleanup_call_ctrl_altering_flag): Don't clear
+	flag for IFN_UNIQUE.
+
+2020-09-10  Jakub Jelinek  <jakub@redhat.com>
+
+	PR debug/93865
+	* lto-streamer.h (struct output_block): Add emit_pwd member.
+	* lto-streamer-out.c: Include toplev.h.
+	(clear_line_info): Set emit_pwd.
+	(lto_output_location_1): Encode the ob->current_file != xloc.file
+	bit directly into the location number.  If changing file, emit
+	additionally a bit whether pwd is emitted and emit it before the
+	first relative pathname since clear_line_info.
+	(output_function, output_constructor): Don't call clear_line_info
+	here.
+	* lto-streamer-in.c (struct string_pair_map): New type.
+	(struct string_pair_map_hasher): New type.
+	(string_pair_map_hasher::hash): New method.
+	(string_pair_map_hasher::equal): New method.
+	(path_name_pair_hash_table, string_pair_map_allocator): New variables.
+	(relative_path_prefix, canon_relative_path_prefix,
+	canon_relative_file_name): New functions.
+	(canon_file_name): Add relative_prefix argument, if non-NULL
+	and string is a relative path, return canon_relative_file_name.
+	(lto_location_cache::input_location_and_block): Decode file change
+	bit from the location number.  If changing file, unpack bit whether
+	pwd is streamed and stream in pwd.  Adjust canon_file_name caller.
+	(lto_free_file_name_hash): Delete path_name_pair_hash_table
+	and string_pair_map_allocator.
+
+2020-09-10  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/96043
+	* tree-vectorizer.h (_slp_instance::cost_vec): New.
+	(_slp_instance::subgraph_entries): Likewise.
+	(BB_VINFO_TARGET_COST_DATA): Remove.
+	* tree-vect-slp.c (vect_free_slp_instance): Free
+	cost_vec and subgraph_entries.
+	(vect_analyze_slp_instance): Initialize them.
+	(vect_slp_analyze_operations): Defer passing costs to
+	the target, instead record them in the SLP graph entry.
+	(get_ultimate_leader): New helper for graph partitioning.
+	(vect_bb_partition_graph_r): Likewise.
+	(vect_bb_partition_graph): New function to partition the
+	SLP graph into independently costable parts.
+	(vect_bb_vectorization_profitable_p): Adjust to work on
+	a subgraph.
+	(vect_bb_vectorization_profitable_p): New wrapper,
+	discarding non-profitable vectorization of subgraphs.
+	(vect_slp_analyze_bb_1): Call vect_bb_partition_graph before
+	costing.
+
+2020-09-09  David Malcolm  <dmalcolm@redhat.com>
+
+	PR analyzer/94355
+	* doc/invoke.texi: Document -Wanalyzer-mismatching-deallocation.
+
+2020-09-09  Segher Boessenkool  <segher@kernel.crashing.org>
+
+	PR rtl-optimization/96475
+	* bb-reorder.c (maybe_duplicate_computed_goto): Remove single_pred_p
+	micro-optimization.
+
+2020-09-09  Tom de Vries  <tdevries@suse.de>
+
+	* config/nvptx/nvptx.c (nvptx_assemble_decl_begin): Fix Wformat
+	warning.
+
+2020-09-09  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-slp.c (vect_attempt_slp_rearrange_stmts): Do
+	nothing when the permutation doesn't permute.
+
+2020-09-09  Tom de Vries  <tdevries@suse.de>
+
+	PR target/96991
+	* config/nvptx/nvptx.c (write_fn_proto): Fix boolean type check.
+
+2020-09-09  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-stmts.c (vectorizable_comparison): Allow
+	STMT_VINFO_LIVE_P stmts.
+
+2020-09-09  Richard Biener  <rguenther@suse.de>
+
+	* tree-vect-stmts.c (vectorizable_condition): Allow
+	STMT_VINFO_LIVE_P stmts.
+
+2020-09-09  Richard Biener  <rguenther@suse.de>
+
+	PR tree-optimization/96978
+	* tree-vect-stmts.c (vectorizable_condition): Do not
+	look at STMT_VINFO_LIVE_P for BB vectorization.
+	(vectorizable_comparison): Likewise.
+
+2020-09-09  liuhongt  <hongtao.liu@intel.com>
+
+	PR target/96955
+	* config/i386/i386.md (get_thread_pointer<mode>): New
+	expander.
+
 2020-09-08  Julian Brown  <julian@codesourcery.com>
 
 	* config/gcn/gcn-valu.md (scatter<mode>_insn_1offset_ds<exec_scatter>):
@@ -3630,7 +3902,7 @@
 	(peephole2 to remove unneded compare after CMPXCHG):
 	New pattern, also handle XOR zeroing and load of -1 by OR.
 
-2020-07-16  Eric Botcazou  <ebotcazou@gcc.gnu.org>
+2020-07-16  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* config/i386/i386.c (ix86_compute_frame_layout): Minor tweak.
 	(ix86_adjust_stack_and_probe): Delete.
@@ -4354,7 +4626,7 @@
 	* config/riscv/riscv-sr.c (riscv_remove_unneeded_save_restore_calls):
 	Abort if any arguments on stack.
 
-2020-07-08  Eric Botcazou  <ebotcazou@gcc.gnu.org>
+2020-07-08  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gimple-fold.c (gimple_fold_builtin_memory_op): Do not fold if
 	either type has reverse scalar storage order.
@@ -4489,7 +4761,7 @@
 	* config/cris/cris.md ("*extopqihi", "*extop<mode>si<setnz>_swap")
 	("*extop<mode>si<setnz>", "*addxqihi_swap"): Reinstate.
 
-2020-07-03  Eric Botcazou  <ebotcazou@gcc.gnu.org>
+2020-07-03  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gimple-fold.c (gimple_fold_builtin_memory_op): Fold calls that
 	were initially created for the assignment of a variable-sized
@@ -4990,7 +5262,7 @@
 	* doc/standards.texi (C Language): Correct the default dialect.
 	(C++ Language): Update the default for C++ to gnu++17.
 
-2020-06-26  Eric Botcazou  <ebotcazou@gcc.gnu.org>
+2020-06-26  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* tree-ssa-reassoc.c (dump_range_entry): New function.
 	(debug_range_entry): New debug function.
@@ -5985,7 +6257,7 @@
 	* config/riscv/riscv.c (riscv_gpr_save_operation_p): Remove
 	assertion and turn it into a early exit check.
 
-2020-06-15  Eric Botcazou  <ebotcazou@gcc.gnu.org>
+2020-06-15  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gimplify.c (gimplify_init_constructor) <AGGREGATE_TYPE>: Declare
 	new ENSURE_SINGLE_ACCESS constant and move variables down.  If it is
@@ -5995,7 +6267,7 @@
 	the type is aggregate non-addressable, ask gimplify_init_constructor
 	whether it can generate a single access to the target.
 
-2020-06-15  Eric Botcazou  <ebotcazou@gcc.gnu.org>
+2020-06-15  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* tree-sra.c (propagate_subaccesses_from_rhs): When a non-scalar
 	access on the LHS is replaced with a scalar access, propagate the
@@ -7098,7 +7370,7 @@
 	* config/gcn/gcn.opt (-mlocal-symbol-id): Delete.
 	* config/gcn/mkoffload.c (main): Don't use -mlocal-symbol-id.
 
-2020-06-02  Eric Botcazou  <ebotcazou@gcc.gnu.org>
+2020-06-02  Eric Botcazou  <ebotcazou@adacore.com>
 
 	PR middle-end/95395
 	* optabs.c (expand_unop): Fix bits/bytes confusion in latest change.
@@ -7440,7 +7712,7 @@
 	make a nonzero adjustment to the memory offset.
 	(b<ior,xor>hi_msx): Turn into a splitter.
 
-2020-05-28  Eric Botcazou  <ebotcazou@gcc.gnu.org>
+2020-05-28  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* gimple-ssa-store-merging.c (merged_store_group::can_be_merged_into):
 	Fix off-by-one error.
@@ -7559,7 +7831,7 @@
 	function.
 	(TARGET_DELEGITIMIZE_ADDRESS): New macro.
 
-2020-05-27  Eric Botcazou  <ebotcazou@gcc.gnu.org>
+2020-05-27  Eric Botcazou  <ebotcazou@adacore.com>
 
 	* builtin-types.def (BT_UINT128): New primitive type.
 	(BT_FN_UINT128_UINT128): New function type.
