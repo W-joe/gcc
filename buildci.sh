@@ -102,6 +102,7 @@ environment() {
         make_flags="-j$(nproc)"
         build_bootstrap="disable"
     elif [ "${CIRRUS_CI}" = "true" ]; then
+        export GCC_MARCH=$(gcc -dumpmachine)
         project_dir=${PWD}
         log_dir=${PWD}/logs
         mkdir -p ${log_dir}
