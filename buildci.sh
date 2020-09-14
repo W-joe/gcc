@@ -102,12 +102,12 @@ environment() {
         make_flags="-j$(nproc)"
         build_bootstrap="disable"
     elif [ "${CIRRUS_CI}" = "true" ]; then
-        export GCC_MARCH=$(gcc -dumpmachine)
         project_dir=${PWD}
         log_dir=${PWD}/logs
         mkdir -p ${log_dir}
         cache_dir="${PWD}/gcc-deps"
         build_host=$($CC -dumpmachine)
+        export build_host
         build_host_canonical=$(/usr/share/misc/config.sub ${build_host})
         build_target=${build_host}
         build_target_canonical=${build_host_canonical}
