@@ -28,7 +28,9 @@ task:
                   setup_script: ./buildci.sh setup
                   build_script: ./buildci.sh build
                   test_script: ./buildci.sh testsuite
-                  log_script: cat ./gcc/testsuite/gdc/gdc.log
+                  log_script:
+                          - find . -iname 'gdc.log'
+                          - cat ./gcc/testsuite/gdc/gdc.log
 
 
 task:
@@ -48,6 +50,9 @@ task:
                   setup_script: ./buildci.sh setup
                   build_script: ./buildci.sh build
                   test_script: ./buildci.sh unittests
-                  log_script: cat ./${GCC_MARCH}/libphobos/testsuite/libphobos.sum
+                  log_script:
+                          - ./buildci.sh environment
+                          - find . -iname 'libphobos.sum'
+                          - cat ./${build_host}/libphobos/testsuite/libphobos.sum
 
 
