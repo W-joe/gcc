@@ -11,7 +11,7 @@ container:
         cpu: 4
         memory: 10G
 
-gdc_task:
+task:
         # 2 hours is a hard limit for community cluster.
         timeout_in: 120m
         clone_script: git clone --branch=master-ci --depth=1 https://github.com/W-joe/gcc /tmp/cirrus-ci-build
@@ -19,9 +19,15 @@ gdc_task:
                 - pwd
                 - env
                 - ls -l
-        setup_script: ./buildci.sh setup
-        build_script: ./buildci.sh build
-        test_script: ./buildci.sh testsuite
+        matrix:
+                - name: GDC
+                  container:
+                          matrix:
+                                  - dockerfile: Dockerfile
+                                  # TODO: add containers for different platforms
+                  setup_script: ./buildci.sh setup
+                  build_script: ./buildci.sh build
+                  test_script: ./buildci.sh testsuite
 
 
 task:
