@@ -237,9 +237,9 @@ installdeps() {
         sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
         sudo apt-get update -qq
         sudo apt-get install -qq gcc-${host_package} g++-${host_package} \
-            autogen autoconf automake bison dejagnu flex rsync patch
+            autogen autoconf automake bison dejagnu flex rsync patch || exit 1
         if [ "$compressor" = "pxz" ]; then
-            sudo apt-get install -qq pxz
+            sudo apt-get install -qq pxz || exit 1
         fi
     fi
 }
