@@ -34,8 +34,6 @@ task:
 
 
 task:
-        environment:
-                BUILD_BOOTSTRAP: "enable"
         # 2 hours is a hard limit for community cluster.
         timeout_in: 120m
         clone_script: git clone --branch=master-ci --depth=1 https://github.com/W-joe/gcc /tmp/cirrus-ci-build
@@ -54,6 +52,28 @@ task:
                   test_script: ./buildci.sh unittests
                   on_failure:
                           log_script: ./buildci.sh print_libphobos_summary
-                  # Install GDC and make a tar ball
-                  install_script: ./buildci.sh build_package
+
+
+task:
+        environment:
+                BUILD_BOOTSTRAP: "enable"
+        # 2 hours is a hard limit for community cluster.
+        timeout_in: 120m
+        clone_script: git clone --branch=master-ci --depth=1 https://github.com/W-joe/gcc /tmp/cirrus-ci-build
+        env_script:
+                - pwd
+                - env
+                - ls -l
+        matrix:
+                - name: Package
+                  container:
+                          matrix:
+                                  - dockerfile: Dockerfile
+                                  # TODO: add containers for different platforms
+                  depends_on:
+                          - Unittest
+                  setup_script: ./buildci.sh setup
+                  build_script: ./buildci.sh build
+                  package_script: ./buildci.sh build_package
+
 
