@@ -50,8 +50,7 @@ task:
                   build_script: ./buildci.sh build
                   test_script: ./buildci.sh unittests
                   log_script:
-                          - ./buildci.sh environment
-                          - env
+                          - ./buildci.sh environment && env
                           - find . -iname 'libphobos.sum'
                           - cat ./build/${build_host}/libphobos/testsuite/libphobos.sum
 
