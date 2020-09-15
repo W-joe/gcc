@@ -420,8 +420,8 @@ print_gdc_summary() {
 }
 
 print_libphobos_summary() {
-	environment
-	cat ./build/${build_host}/libphobos/testsuite/libphobos.sum
+    environment
+    cat ./build/${build_host}/libphobos/testsuite/libphobos.sum
 }
 
 ## Run a single build task or all at once.
