@@ -29,7 +29,7 @@ task:
                   build_script: ./buildci.sh build
                   test_script: ./buildci.sh testsuite
                   on_failure:
-                        log_script: cat ./build/gcc/testsuite/gdc/gdc.log
+                          log_script: ./buildci.sh print_gdc_summary
 
 
 task:
