@@ -51,9 +51,6 @@ task:
                   test_script: ./buildci.sh unittests
                   on_failure:
                           log_script: ./buildci.sh print_libphobos_summary
-                # Install GDC and make a tar ball
-                - name: Package
-                  depends_on:
-                          - Unittest
+                  # Install GDC and make a tar ball
                   install_script: ./buildci.sh build_package
 
