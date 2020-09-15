@@ -414,6 +414,11 @@ save_logs() {
     find ${log_dir} \( -name \*.sum -o -name \*.log \) -exec ${compressor} \{\} \;
 }
 
+print_libphobos_summary() {
+	environment
+	cat ./build/${build_host}/libphobos/testsuite/libphobos.sum
+}
+
 ## Run a single build task or all at once.
 if [ "$1" != "" ]; then
     # Skip calling environment if running setup, as dependencies might not be installed yet.
