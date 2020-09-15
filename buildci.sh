@@ -425,9 +425,9 @@ print_libphobos_summary() {
 }
 
 build_package() {
-    cd build
-    make install
-    tar -cJf gdc-${build_host}.txz /usr
+    cd build || exit 1
+    make install || exit 1
+    tar -cJf gdc-${build_host}.txz /usr || exit 1
 }
 
 ## Run a single build task or all at once.
