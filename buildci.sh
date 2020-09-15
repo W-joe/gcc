@@ -414,6 +414,11 @@ save_logs() {
     find ${log_dir} \( -name \*.sum -o -name \*.log \) -exec ${compressor} \{\} \;
 }
 
+print_gdc_summary() {
+    environment
+    cat ./build/gcc/testsuite/gdc/gdc.log
+}
+
 print_libphobos_summary() {
 	environment
 	cat ./build/${build_host}/libphobos/testsuite/libphobos.sum
