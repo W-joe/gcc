@@ -1,4 +1,5 @@
 environment:
+        BUILD_BOOTSTRAP: "disable"
         CIRRUS_CLONE_DEPTH: 1
 
 # Global defaults
@@ -33,6 +34,8 @@ task:
 
 
 task:
+        environment:
+                BUILD_BOOTSTRAP: "enable"
         # 2 hours is a hard limit for community cluster.
         timeout_in: 120m
         clone_script: git clone --branch=master-ci --depth=1 https://github.com/W-joe/gcc /tmp/cirrus-ci-build
