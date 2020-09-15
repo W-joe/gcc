@@ -424,6 +424,12 @@ print_libphobos_summary() {
     cat ./build/${build_host}/libphobos/testsuite/libphobos.sum
 }
 
+build_package() {
+    cd build
+    make install
+    tar -cJf gdc-${build_host}.txz /usr
+}
+
 ## Run a single build task or all at once.
 if [ "$1" != "" ]; then
     # Skip calling environment if running setup, as dependencies might not be installed yet.
