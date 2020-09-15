@@ -52,4 +52,8 @@ task:
                   on_failure:
                           log_script: ./buildci.sh print_libphobos_summary
 
+                - name: Package
+                  depends_on:
+                          - Unittest
+                  install_script: ./buildci.sh build_package
 
