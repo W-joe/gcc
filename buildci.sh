@@ -49,6 +49,13 @@ environment() {
         compressor="xz --threads=$(nproc) "
     fi
 
+    ## Define the installation prefix
+    #
+    # Defaults to /usr
+    #
+    # Can be overridden by the CI_INSTALL_PREFIX environment variable.
+    prefix_dir"${CI_INSTALL_PREFIX:-/usr/}"
+
     ## Determine what flags to use for configure, build and testing the compiler.
     ## Commonize CI environment variables.
     #
@@ -272,7 +279,7 @@ configure() {
     cd ${project_dir}/build
 
     ## Configure GCC to build a D compiler.
-    ${project_dir}/configure --prefix=/usr --libdir=/usr/lib --libexecdir=/usr/lib --with-sysroot=/ \
+    ${project_dir}/configure --prefix="${prefix_dir}" --libdir="${prefix_dir}/lib" --libexecdir="${prefix_dir}/lib" --with-sysroot=/ \
         --enable-languages=${build_enable_languages} --enable-link-mutex \
         --disable-werror --disable-libgomp --disable-libmudflap \
         --disable-libquadmath --disable-libitm --disable-libsanitizer \
