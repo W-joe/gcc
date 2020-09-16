@@ -416,12 +416,12 @@ save_logs() {
 
 print_gdc_summary() {
     environment
-    cat ./build/gcc/testsuite/gdc/gdc.log
+    cat ${project_dir}/build/gcc/testsuite/gdc/gdc.log
 }
 
 print_libphobos_summary() {
     environment
-    cat ./build/${build_host}/libphobos/testsuite/libphobos.sum
+    cat ${project_dir}/build/${build_host}/libphobos/testsuite/libphobos.sum
 }
 
 build_package() {
