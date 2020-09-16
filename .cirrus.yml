@@ -75,5 +75,7 @@ task:
                   setup_script: ./buildci.sh setup
                   build_script: ./buildci.sh build
                   package_script: ./buildci.sh build_package
+                  tarball_artifacts:
+                          path: "artifacts/*"
 
 
