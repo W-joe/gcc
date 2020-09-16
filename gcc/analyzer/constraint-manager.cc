@@ -940,6 +940,9 @@ constraint_manager::add_constraint_internal (equiv_class_id lhs_id,
 					      enum constraint_op c_op,
 					      equiv_class_id rhs_id)
 {
+  if (m_constraints.length () >= param_analyzer_max_constraints)
+    return;
+
   constraint new_c (lhs_id, c_op, rhs_id);
 
   /* Remove existing constraints that would be implied by the
@@ -1159,39 +1162,6 @@ constraint_manager::get_or_add_equiv_class (const svalue *sval)
   m_equiv_classes.safe_push (new_ec);
 
   equiv_class_id new_id (m_equiv_classes.length () - 1);
-
-  if (sval->maybe_get_constant ())
-    {
-      /* If we have a new EC for a constant, add constraints comparing this
-	 to other constants we may have (so that we accumulate the transitive
-	 closure of all constraints on constants as the constants are
-	 added).  */
-      for (equiv_class_id other_id (0); other_id.m_idx < new_id.m_idx;
-	   other_id.m_idx++)
-	{
-	  const equiv_class &other_ec = other_id.get_obj (*this);
-	  if (other_ec.m_constant
-	      && types_compatible_p (TREE_TYPE (new_ec->m_constant),
-				     TREE_TYPE (other_ec.m_constant)))
-	    {
-	      /* If we have two ECs, both with constants, the constants must be
-		 non-equal (or they would be in the same EC).
-		 Determine the direction of the inequality, and record that
-		 fact.  */
-	      tree lt
-		= fold_binary (LT_EXPR, boolean_type_node,
-			       new_ec->m_constant, other_ec.m_constant);
-	      if (lt == boolean_true_node)
-		add_constraint_internal (new_id, CONSTRAINT_LT, other_id);
-	      else if (lt == boolean_false_node)
-		add_constraint_internal (other_id, CONSTRAINT_LT, new_id);
-	      /* Refresh new_id, in case ECs were merged.  SVAL should always
-		 be present by now, so this should never lead to a
-		 recursion.  */
-	      new_id = get_or_add_equiv_class (sval);
-	    }
-	}
-    }
 
   return new_id;
 }
@@ -1782,7 +1752,15 @@ public:
     if (m_cm_b->eval_condition (lhs, code, rhs).is_true ())
       {
 	bool sat = m_out->add_constraint (lhs, code, rhs);
-	gcc_assert (sat);
+	if (!sat)
+	  {
+	    /* If -fanalyzer-transitivity is off, we can encounter cases
+	       where at least one of the two constraint_managers being merged
+	       is infeasible, but we only discover that infeasibility
+	       during merging (PR analyzer/96650).
+	       Silently drop such constraints.  */
+	    gcc_assert (!flag_analyzer_transitivity);
+	  }
       }
   }
 
