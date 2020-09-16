@@ -120,6 +120,11 @@ proc libphobos_init { args } {
 	set dg-do-what-default "link"
     }
 
+    # Increase the default timeout due to time out failures.
+    # see: https://forum.dlang.org/post/gzhslojzocrixfpyljwe@forum.dlang.org
+    global tool_timeout
+    set tool_timeout 600
+
     # What arguments to pass to run program images.
     global libphobos_run_args
     set libphobos_run_args ""
