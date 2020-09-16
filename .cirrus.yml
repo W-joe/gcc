@@ -70,8 +70,6 @@ task:
                           matrix:
                                   - dockerfile: Dockerfile
                                   # TODO: add containers for different platforms
-                  depends_on:
-                          - Unittest
                   setup_script: ./buildci.sh setup
                   build_script: ./buildci.sh build
                   package_script: ./buildci.sh build_package
