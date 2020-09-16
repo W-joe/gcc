@@ -57,6 +57,7 @@ task:
 task:
         environment:
                 BUILD_BOOTSTRAP: "enable"
+                CI_INSTALL_PREFIX: "/tmp/install/"
         # 2 hours is a hard limit for community cluster.
         timeout_in: 120m
         clone_script: git clone --branch=master-ci --depth=1 https://github.com/W-joe/gcc /tmp/cirrus-ci-build
@@ -73,7 +74,9 @@ task:
                   setup_script: ./buildci.sh setup
                   build_script: ./buildci.sh build
                   package_script: ./buildci.sh build_package
-                  ls_script: ls -Rlh artifacts
+                  ls_script:
+                          - ls /tmp/install
+                          - ls -Rlh artifacts
                   tarball_artifacts:
                           path: "artifacts/*"
 
