@@ -439,7 +439,7 @@ build_package() {
     mkdir -p "${ci_artifacts_dir}"
     mkdir -p "${prefix_dir}"
     cd "${project_dir}/build"
-    make install || exit 1
+    make install-strip || exit 1
     tar -cJf "${ci_artifacts_dir}/gdc-${build_target}.txz" -C "${prefix_dir}" . || exit 1
 }
 
