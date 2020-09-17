@@ -432,7 +432,7 @@ print_libphobos_summary() {
 }
 
 build_package() {
-    mkdir ${project_dir}/artifacts
+    mkdir -p ${project_dir}/artifacts
     cd ${project_dir}/build
     make install || exit 1
     tar -cJf ${project_dir}/artifacts/gdc-${build_host}.txz /usr || exit 1
