@@ -54,7 +54,7 @@ environment() {
     # Defaults to /usr
     #
     # Can be overridden by the CI_INSTALL_PREFIX environment variable.
-    prefix_dir"${CI_INSTALL_PREFIX:-/usr/}"
+    prefix_dir="${CI_INSTALL_PREFIX:-/usr/}"
 
     ## Determine what flags to use for configure, build and testing the compiler.
     ## Commonize CI environment variables.
