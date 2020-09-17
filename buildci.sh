@@ -108,7 +108,6 @@ environment() {
         ci_artifacts_dir="${project_dir}/artifacts"
         cache_dir="${PWD}/gcc-deps"
         build_host=$($CC -dumpmachine)
-        export build_host
         build_host_canonical=$(/usr/share/misc/config.sub ${build_host})
         build_target=${build_host}
         build_target_canonical=${build_host_canonical}
