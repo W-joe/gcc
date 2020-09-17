@@ -113,6 +113,7 @@ environment() {
         build_target_canonical=${build_host_canonical}
         make_flags="-j$(nproc) -sw LIBTOOLFLAGS=--silent"
         build_bootstrap=${BUILD_BOOTSTRAP}
+        build_configure_flags="--disable-libstdcxx-pch ${build_configure_flags}"
     else
         echo "Unhandled CI environment"
         exit 1
