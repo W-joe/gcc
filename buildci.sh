@@ -433,9 +433,10 @@ print_libphobos_summary() {
 
 build_package() {
     mkdir -p ${project_dir}/artifacts
+    mkdir -p ${prefix_dir}
     cd ${project_dir}/build
     make install || exit 1
-    tar -cJf ${project_dir}/artifacts/gdc-${build_host}.txz /usr || exit 1
+    tar -cJf ${project_dir}/artifacts/gdc-${build_host}.txz ${prefix_dir} || exit 1
 }
 
 ## Run a single build task or all at once.
