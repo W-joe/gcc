@@ -234,6 +234,9 @@ environment() {
     #
     # Can be overridden by the CI_INSTALL_PREFIX environment variable.
     prefix_dir="${CI_INSTALL_PREFIX:-/usr/}"
+    if [ "/usr/" != "$prefix_dir" ]; then
+        prefix_dir="${prefix_dir}/${build_target}/"
+    fi
 }
 
 installdeps() {
