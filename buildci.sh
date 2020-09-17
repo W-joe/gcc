@@ -49,13 +49,6 @@ environment() {
         compressor="xz --threads=$(nproc) "
     fi
 
-    ## Define the installation prefix
-    #
-    # Defaults to /usr
-    #
-    # Can be overridden by the CI_INSTALL_PREFIX environment variable.
-    prefix_dir="${CI_INSTALL_PREFIX:-/usr/}"
-
     ## Determine what flags to use for configure, build and testing the compiler.
     ## Commonize CI environment variables.
     #
@@ -234,6 +227,13 @@ environment() {
             build_enable_languages='c++,d --disable-lto'
             ;;
     esac
+
+    ## Define the installation prefix
+    #
+    # Defaults to /usr
+    #
+    # Can be overridden by the CI_INSTALL_PREFIX environment variable.
+    prefix_dir="${CI_INSTALL_PREFIX:-/usr/}"
 }
 
 installdeps() {
