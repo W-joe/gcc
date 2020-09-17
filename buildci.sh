@@ -105,6 +105,7 @@ environment() {
         project_dir=${PWD}
         log_dir=${PWD}/logs
         mkdir -p ${log_dir}
+        ci_artifacts_dir="${project_dir}/artifacts"
         cache_dir="${PWD}/gcc-deps"
         build_host=$($CC -dumpmachine)
         export build_host
@@ -432,11 +433,11 @@ print_libphobos_summary() {
 }
 
 build_package() {
-    mkdir -p ${project_dir}/artifacts
+    mkdir -p ${ci_artifacts_dir}
     mkdir -p ${prefix_dir}
     cd ${project_dir}/build
     make install || exit 1
-    tar -cJf ${project_dir}/artifacts/gdc-${build_host}.txz ${prefix_dir} || exit 1
+    tar -cJf ${ci_artifacts_dir}/gdc-${build_host}.txz ${prefix_dir} || exit 1
 }
 
 ## Run a single build task or all at once.
