@@ -435,11 +435,19 @@ print_libphobos_summary() {
     cat ${project_dir}/build/${build_host}/libphobos/testsuite/libphobos.sum
 }
 
+fetch_tags() {
+    pushd "${project_dir}" > /dev/null
+    echo "Fetching tags..."
+    git fetch --tags ||  exit 1
+    popd > /dev/null
+}
+
 build_package() {
     mkdir -p "${ci_artifacts_dir}"
     mkdir -p "${prefix_dir}"
     cd "${project_dir}/build"
     make install-strip || exit 1
+    fetch_tags
     tarball_version="$(git describe --all --abbrev=40 --match 'basepoints/gcc-[0-9]*' origin/master | sed -n 's,^\(tags/\)\?basepoints/gcc-,r,p')"
     tarball_name="gdc-${build_target}-${tarball_version}.txz"
     echo "Creating tarball ${tarball_name}..."
