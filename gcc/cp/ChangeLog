@@ -1,3 +1,53 @@
+2020-09-18  Jason Merrill  <jason@redhat.com>
+
+	PR bootstrap/97118
+	* decl.c (complete_vars): Only call layout_var_decl if completing
+	the type succeeded.
+
+2020-09-18  Jason Merrill  <jason@redhat.com>
+
+	* decl.c (complete_vars): Call layout_var_decl.
+
+2020-09-17  Patrick Palka  <ppalka@redhat.com>
+
+	PR c++/96409
+	PR c++/96410
+	* constraint.cc (tsubst_requires_expr): Use REQUIRES_EXPR_PARMS
+	and REQUIRES_EXPR_REQS.  Use REQUIRES_EXPR_EXTRA_ARGS,
+	add_extra_args and build_extra_args to defer substitution until
+	we have all the template arguments.
+	(finish_requires_expr): Adjust the call to build_min so that
+	REQUIRES_EXPR_EXTRA_ARGS gets set to NULL_TREE.
+	* cp-tree.def (REQUIRES_EXPR): Give it a third operand.
+	* cp-tree.h (REQUIRES_EXPR_PARMS, REQUIRES_EXPR_REQS,
+	REQUIRES_EXPR_EXTRA_ARGS): Define.
+	(add_extra_args, build_extra_args): Declare.
+
+2020-09-16  Nathan Sidwell  <nathan@acm.org>
+
+	* cp-tree.h (cp_check_omp_declare_reduction): Return bool.
+	* semantics.c (cp_check_omp_declare_reduction): Return true on for
+	success.
+	* pt.c (push_template_decl_real): OMP reductions do not get a
+	template header.
+	(tsubst_function_decl): Remove special casing for local decl omp
+	reductions.
+	(tsubst_expr): Call instantiate_body for a local omp reduction.
+	(instantiate_body): Add nested_p parm, and deal with such
+	instantiations.
+	(instantiate_decl): Reject FUNCTION_SCOPE entities, adjust
+	instantiate_body call.
+
+2020-09-16  Nathan Sidwell  <nathan@acm.org>
+
+	* pt.c (instantiate_body): Remove 'nested' var, simplify
+	push_to_top logic.
+
+2020-09-16  Nathan Sidwell  <nathan@acm.org>
+
+	* pt.c (instantiate_body): New, broken out of ..
+	(instantiate_decl): ... here.  Call it.
+
 2020-09-15  Nathan Sidwell  <nathan@acm.org>
 
 	* pt.c (push_template_decl_real): OMP reductions retain a template

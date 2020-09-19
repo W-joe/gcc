@@ -227,6 +227,7 @@ static tree canonicalize_expr_argument (tree, tsubst_flags_t);
 static tree make_argument_pack (tree);
 static void register_parameter_specializations (tree, tree);
 static tree enclosing_instantiation_of (tree tctx);
+static void instantiate_body (tree pattern, tree args, tree d, bool nested);
 
 /* Make the current scope suitable for access checking when we are
    processing T.  T can be FUNCTION_DECL for instantiated function
@@ -6073,10 +6074,7 @@ push_template_decl_real (tree decl, bool is_friend)
 	retrofit_lang_decl (decl);
       if (DECL_LANG_SPECIFIC (decl)
 	  && !(VAR_OR_FUNCTION_DECL_P (decl)
-	       && DECL_LOCAL_DECL_P (decl)
-	       /* OMP reductions still need a template header.  */
-	       && !(TREE_CODE (decl) == FUNCTION_DECL
-		    && DECL_OMP_DECLARE_REDUCTION_P (decl))))
+	       && DECL_LOCAL_DECL_P (decl)))
 	DECL_TEMPLATE_INFO (decl) = info;
     }
 
@@ -13714,8 +13712,7 @@ tsubst_function_decl (tree t, tree args, tsubst_flags_t complain,
   gcc_assert (DECL_TEMPLATE_INFO (t) != NULL_TREE
 	      || DECL_LOCAL_DECL_P (t));
 
-  if (DECL_LOCAL_DECL_P (t)
-      && !DECL_OMP_DECLARE_REDUCTION_P (t))
+  if (DECL_LOCAL_DECL_P (t))
     {
       if (tree spec = retrieve_local_specialization (t))
 	return spec;
@@ -13970,8 +13967,7 @@ tsubst_function_decl (tree t, tree args, tsubst_flags_t complain,
 	  && !uses_template_parms (argvec))
 	tsubst_default_arguments (r, complain);
     }
-  else if (DECL_LOCAL_DECL_P (r)
-	   && !DECL_OMP_DECLARE_REDUCTION_P (r))
+  else if (DECL_LOCAL_DECL_P (r))
     {
       if (!cp_unevaluated_operand)
 	register_local_specialization (r, t);
@@ -18083,7 +18079,8 @@ tsubst_expr (tree t, tree args, tsubst_flags_t complain, tree in_decl,
 		    DECL_CONTEXT (decl) = global_namespace;
 		    pushdecl (decl);
 		    DECL_CONTEXT (decl) = current_function_decl;
-		    cp_check_omp_declare_reduction (decl);
+		    if (cp_check_omp_declare_reduction (decl))
+		      instantiate_body (pattern_decl, args, decl, true);
 		  }
 		else
 		  {
@@ -25447,6 +25444,164 @@ register_parameter_specializations (tree pattern, tree inst)
   gcc_assert (!spec_parm);
 }
 
+/* Instantiate the body of D using PATTERN with ARGS.  We have
+   already determined PATTERN is the correct template to use.
+   NESTED_P is true if this is a nested function, in which case
+   PATTERN will be a FUNCTION_DECL not a TEMPLATE_DECL.  */
+
+static void
+instantiate_body (tree pattern, tree args, tree d, bool nested_p)
+{
+  tree td = NULL_TREE;
+  tree code_pattern = pattern;
+
+  if (!nested_p)
+    {
+      td = pattern;
+      code_pattern = DECL_TEMPLATE_RESULT (td);
+    }
+  else
+    /* Only OMP reductions are nested.  */
+    gcc_checking_assert (DECL_OMP_DECLARE_REDUCTION_P (code_pattern));
+
+  vec<tree> omp_privatization_save;
+  if (current_function_decl)
+    save_omp_privatization_clauses (omp_privatization_save);
+
+  bool push_to_top
+    = !(current_function_decl
+	&& !LAMBDA_FUNCTION_P (d)
+	&& decl_function_context (d) == current_function_decl);
+
+  if (push_to_top)
+    push_to_top_level ();
+  else
+    {
+      gcc_assert (!processing_template_decl);
+      push_function_context ();
+      cp_unevaluated_operand = 0;
+      c_inhibit_evaluation_warnings = 0;
+    }
+
+  if (VAR_P (d))
+    {
+      /* The variable might be a lambda's extra scope, and that
+	 lambda's visibility depends on D's.  */
+      maybe_commonize_var (d);
+      determine_visibility (d);
+    }
+
+  /* Mark D as instantiated so that recursive calls to
+     instantiate_decl do not try to instantiate it again.  */
+  DECL_TEMPLATE_INSTANTIATED (d) = 1;
+
+  if (td)
+    /* Regenerate the declaration in case the template has been modified
+       by a subsequent redeclaration.  */
+    regenerate_decl_from_template (d, td, args);
+
+  /* We already set the file and line above.  Reset them now in case
+     they changed as a result of calling regenerate_decl_from_template.  */
+  input_location = DECL_SOURCE_LOCATION (d);
+
+  if (VAR_P (d))
+    {
+      tree init;
+      bool const_init = false;
+
+      /* Clear out DECL_RTL; whatever was there before may not be right
+	 since we've reset the type of the declaration.  */
+      SET_DECL_RTL (d, NULL);
+      DECL_IN_AGGR_P (d) = 0;
+
+      /* The initializer is placed in DECL_INITIAL by
+	 regenerate_decl_from_template so we don't need to
+	 push/pop_access_scope again here.  Pull it out so that
+	 cp_finish_decl can process it.  */
+      init = DECL_INITIAL (d);
+      DECL_INITIAL (d) = NULL_TREE;
+      DECL_INITIALIZED_P (d) = 0;
+
+      /* Clear DECL_EXTERNAL so that cp_finish_decl will process the
+	 initializer.  That function will defer actual emission until
+	 we have a chance to determine linkage.  */
+      DECL_EXTERNAL (d) = 0;
+
+      /* Enter the scope of D so that access-checking works correctly.  */
+      bool enter_context = DECL_CLASS_SCOPE_P (d);
+      if (enter_context)
+        push_nested_class (DECL_CONTEXT (d));
+
+      const_init = DECL_INITIALIZED_BY_CONSTANT_EXPRESSION_P (code_pattern);
+      cp_finish_decl (d, init, const_init, NULL_TREE, 0);
+
+      if (enter_context)
+        pop_nested_class ();
+    }
+  else if (TREE_CODE (d) == FUNCTION_DECL && DECL_DEFAULTED_FN (code_pattern))
+    synthesize_method (d);
+  else if (TREE_CODE (d) == FUNCTION_DECL)
+    {
+      /* Set up the list of local specializations.  */
+      local_specialization_stack lss (push_to_top ? lss_blank : lss_copy);
+      tree block = NULL_TREE;
+
+      /* Set up context.  */
+      if (nested_p)
+	block = push_stmt_list ();
+      else
+	start_preparsed_function (d, NULL_TREE, SF_PRE_PARSED);
+
+      perform_instantiation_time_access_checks (code_pattern, args);
+
+      /* Create substitution entries for the parameters.  */
+      register_parameter_specializations (code_pattern, d);
+
+      /* Substitute into the body of the function.  */
+      if (DECL_OMP_DECLARE_REDUCTION_P (code_pattern))
+	tsubst_omp_udr (DECL_SAVED_TREE (code_pattern), args,
+			tf_warning_or_error, d);
+      else
+	{
+	  tsubst_expr (DECL_SAVED_TREE (code_pattern), args,
+		       tf_warning_or_error, DECL_TI_TEMPLATE (d),
+		       /*integral_constant_expression_p=*/false);
+
+	  /* Set the current input_location to the end of the function
+	     so that finish_function knows where we are.  */
+	  input_location
+	    = DECL_STRUCT_FUNCTION (code_pattern)->function_end_locus;
+
+	  /* Remember if we saw an infinite loop in the template.  */
+	  current_function_infinite_loop
+	    = DECL_STRUCT_FUNCTION (code_pattern)->language->infinite_loop;
+	}
+
+      /* Finish the function.  */
+      if (nested_p)
+	DECL_SAVED_TREE (d) = pop_stmt_list (block);
+      else
+	{
+	  d = finish_function (/*inline_p=*/false);
+	  expand_or_defer_fn (d);
+	}
+
+      if (DECL_OMP_DECLARE_REDUCTION_P (code_pattern))
+	cp_check_omp_declare_reduction (d);
+    }
+
+  /* We're not deferring instantiation any more.  */
+  TI_PENDING_TEMPLATE_FLAG (DECL_TEMPLATE_INFO (d)) = 0;
+
+  if (push_to_top)
+    pop_from_top_level ();
+  else
+    pop_function_context ();
+
+  if (current_function_decl)
+    restore_omp_privatization_clauses (omp_privatization_save);
+}
+
 /* Produce the definition of D, a _DECL generated from a template.  If
    DEFER_OK is true, then we don't have to actually do the
    instantiation now; we just have to do it sometime.  Normally it is
@@ -25477,6 +25632,8 @@ instantiate_decl (tree d, bool defer_ok, bool expl_inst_class_mem_p)
 
   /* A concept is never instantiated. */
   gcc_assert (!DECL_DECLARED_CONCEPT_P (d));
+
+  gcc_checking_assert (!DECL_FUNCTION_SCOPE_P (d));
 
   /* Variables are never deferred; if instantiation is required, they
      are instantiated right away.  That allows for better code in the
@@ -25684,162 +25841,19 @@ instantiate_decl (tree d, bool defer_ok, bool expl_inst_class_mem_p)
       /* If we're in unevaluated context, we just wanted to get the
 	 constant value; this isn't an odr use, so don't queue
 	 a full instantiation.  */
-      if (cp_unevaluated_operand != 0)
-	goto out;
-      /* ??? Historically, we have instantiated inline functions, even
-	 when marked as "extern template".  */
-      if (!(external_p && VAR_P (d)))
+      if (!cp_unevaluated_operand
+	  /* ??? Historically, we have instantiated inline functions, even
+	     when marked as "extern template".  */
+	  && !(external_p && VAR_P (d)))
 	add_pending_template (d);
-      goto out;
     }
-
-  bool push_to_top, nested;
-  tree fn_context;
-  fn_context = decl_function_context (d);
-  if (LAMBDA_FUNCTION_P (d))
-    /* tsubst_lambda_expr resolved any references to enclosing functions.  */
-    fn_context = NULL_TREE;
-  nested = current_function_decl != NULL_TREE;
-  push_to_top = !(nested && fn_context == current_function_decl);
-
-  vec<tree> omp_privatization_save;
-  if (nested)
-    save_omp_privatization_clauses (omp_privatization_save);
-
-  if (push_to_top)
-    push_to_top_level ();
   else
     {
-      gcc_assert (!processing_template_decl);
-      push_function_context ();
-      cp_unevaluated_operand = 0;
-      c_inhibit_evaluation_warnings = 0;
-    }
-
-  if (VAR_P (d))
-    {
-      /* The variable might be a lambda's extra scope, and that
-	 lambda's visibility depends on D's.  */
-      maybe_commonize_var (d);
-      determine_visibility (d);
-    }
-
-  /* Mark D as instantiated so that recursive calls to
-     instantiate_decl do not try to instantiate it again.  */
-  DECL_TEMPLATE_INSTANTIATED (d) = 1;
-
-  /* Regenerate the declaration in case the template has been modified
-     by a subsequent redeclaration.  */
-  regenerate_decl_from_template (d, td, args);
-
-  /* We already set the file and line above.  Reset them now in case
-     they changed as a result of calling regenerate_decl_from_template.  */
-  input_location = DECL_SOURCE_LOCATION (d);
-
-  if (VAR_P (d))
-    {
-      tree init;
-      bool const_init = false;
-
-      /* Clear out DECL_RTL; whatever was there before may not be right
-	 since we've reset the type of the declaration.  */
-      SET_DECL_RTL (d, NULL);
-      DECL_IN_AGGR_P (d) = 0;
-
-      /* The initializer is placed in DECL_INITIAL by
-	 regenerate_decl_from_template so we don't need to
-	 push/pop_access_scope again here.  Pull it out so that
-	 cp_finish_decl can process it.  */
-      init = DECL_INITIAL (d);
-      DECL_INITIAL (d) = NULL_TREE;
-      DECL_INITIALIZED_P (d) = 0;
-
-      /* Clear DECL_EXTERNAL so that cp_finish_decl will process the
-	 initializer.  That function will defer actual emission until
-	 we have a chance to determine linkage.  */
-      DECL_EXTERNAL (d) = 0;
-
-      /* Enter the scope of D so that access-checking works correctly.  */
-      bool enter_context = DECL_CLASS_SCOPE_P (d);
-      if (enter_context)
-        push_nested_class (DECL_CONTEXT (d));
-
-      const_init = DECL_INITIALIZED_BY_CONSTANT_EXPRESSION_P (code_pattern);
-      cp_finish_decl (d, init, const_init, NULL_TREE, 0);
-
-      if (enter_context)
-        pop_nested_class ();
-
       if (variable_template_p (gen_tmpl))
 	note_variable_template_instantiation (d);
-    }
-  else if (TREE_CODE (d) == FUNCTION_DECL && DECL_DEFAULTED_FN (code_pattern))
-    synthesize_method (d);
-  else if (TREE_CODE (d) == FUNCTION_DECL)
-    {
-      /* Set up the list of local specializations.  */
-      local_specialization_stack lss (push_to_top ? lss_blank : lss_copy);
-      tree block = NULL_TREE;
-
-      /* Set up context.  */
-      if (DECL_OMP_DECLARE_REDUCTION_P (code_pattern)
-	  && TREE_CODE (DECL_CONTEXT (code_pattern)) == FUNCTION_DECL)
-	block = push_stmt_list ();
-      else
-	start_preparsed_function (d, NULL_TREE, SF_PRE_PARSED);
-
-      perform_instantiation_time_access_checks (DECL_TEMPLATE_RESULT (td),
-						args);
-
-      /* Create substitution entries for the parameters.  */
-      register_parameter_specializations (code_pattern, d);
-
-      /* Substitute into the body of the function.  */
-      if (DECL_OMP_DECLARE_REDUCTION_P (code_pattern))
-	tsubst_omp_udr (DECL_SAVED_TREE (code_pattern), args,
-			tf_warning_or_error, tmpl);
-      else
-	{
-	  tsubst_expr (DECL_SAVED_TREE (code_pattern), args,
-		       tf_warning_or_error, tmpl,
-		       /*integral_constant_expression_p=*/false);
-
-	  /* Set the current input_location to the end of the function
-	     so that finish_function knows where we are.  */
-	  input_location
-	    = DECL_STRUCT_FUNCTION (code_pattern)->function_end_locus;
-
-	  /* Remember if we saw an infinite loop in the template.  */
-	  current_function_infinite_loop
-	    = DECL_STRUCT_FUNCTION (code_pattern)->language->infinite_loop;
-	}
-
-      /* Finish the function.  */
-      if (DECL_OMP_DECLARE_REDUCTION_P (code_pattern)
-	  && TREE_CODE (DECL_CONTEXT (code_pattern)) == FUNCTION_DECL)
-	DECL_SAVED_TREE (d) = pop_stmt_list (block);
-      else
-	{
-	  d = finish_function (/*inline_p=*/false);
-	  expand_or_defer_fn (d);
-	}
-
-      if (DECL_OMP_DECLARE_REDUCTION_P (code_pattern))
-	cp_check_omp_declare_reduction (d);
+      instantiate_body (td, args, d, false);
     }
 
-  /* We're not deferring instantiation any more.  */
-  TI_PENDING_TEMPLATE_FLAG (DECL_TEMPLATE_INFO (d)) = 0;
-
-  if (push_to_top)
-    pop_from_top_level ();
-  else
-    pop_function_context ();
-
-  if (nested)
-    restore_omp_privatization_clauses (omp_privatization_save);
-
-out:
   pop_deferring_access_checks ();
   timevar_pop (TV_TEMPLATE_INST);
   pop_tinst_level ();
