@@ -440,7 +440,10 @@ build_package() {
     mkdir -p "${prefix_dir}"
     cd "${project_dir}/build"
     make install-strip || exit 1
-    tar -cJf "${ci_artifacts_dir}/gdc-${build_target}.txz" -C "${prefix_dir}" . || exit 1
+    tarball_version="$(git describe --all --abbrev=40 --match 'basepoints/gcc-[0-9]*' origin/master | sed -n 's,^\(tags/\)\?basepoints/gcc-,r,p')"
+    tarball_name="gdc-${build_target}-${tarball_version}.txz"
+    echo "Creating tarball ${tarball_name}..."
+    tar -cJf "${ci_artifacts_dir}/${tarball_name}" -C "${prefix_dir}" . || exit 1
 }
 
 ## Run a single build task or all at once.
